@@ -1,0 +1,82 @@
+----------------------
+タスク
+----------------------
+・テスト
+
+・トラブルシューティング
+  ・reference を 使った時に Store.include(:tags).where("tags.name"=>"hoge) が機能するようにする。
+
+・MongoDBのデータ構造とクエリーのお勉強（主に親子関係とか）
+・Twitter との連動
+・CSS
+
+
+ 
+----------------------
+トラブルシューティング
+----------------------
+Ruby1.9.2 と Rails3.0.3 で incompatible character encodings: UTF-8 and ASCII-8BIT エラー
+  http://www.kaeruspoon.net/articles/895
+  https://github.com/rails/rails/issues/2880
+  http://www.ruby-forum.com/topic/1871146
+  ひとまず　以下の箇所をコメントアウトすることで対応した
+    /Users/shindo_ryohei/.rvm/gems/ruby-1.9.2-p180@rails3tutorial/gems/
+    actionpack-3.1.1/lib/action_dispatch/middleware/show_exceptions.rb:131
+    
+fields_for で作った FormBuilder に text_field なんてメソッドはねーよって言われる問題
+  text_area　を一回読んだらなぜか直った　
+  特に他には何もしていないと思うのだが・・・。
+  
+なぜか created_at,update_at が UTC で保存される
+  Timestamps::Created,Updated で Time.new.utc ってやってた
+  なのでそこはパッチを当てる事にした
+
+子ごと save すると子の created_at,update_at が更新されない
+  まずモデル間の関係が reference と embed が混在しおかしくなっていたのでそれを全て reference に直した
+  次に、親でsaveをたたいても、子はsaveされないことがわかったので、以下のように関係を定義することで、両方がsaveされるようにした
+    has_many :comments, autosave: true
+  EMBEDDED　のほうでやる場合は 以下のように宣言し、callbackが呼ばれるようにする
+    embeds_many :addresses, cascade_callbacks: true
+  ただし、これはコールバックが二回呼ばれる可能性があるので注意。（詳しくは以下のコードを参照）
+    # This will fire the callbacks twice
+    person.addresses.create(street: "Unter den Linden")
+    # This fires the callbacks once
+    person.addresses.build(street: "Maybachufer")
+    person.save
+  
+削除リンクがうまく機能しない
+  Rails3 の削除リンクは javascript を利用している。
+  Gemfile から jquery などの記述を削除したのが原因だった
+  
+新規登録時に Illegal instruction で server が落ちる
+  以下のようにモデル間の関係を定義したことで、store_save => comment_save => store_save のループに入ってた
+	class Store
+	  has_many :comments, autosave: true
+  class Comments
+    belongs_to :store, autosave: ture
+
+Store.where("tags.name"=>params[:q]) が動かない
+  これは embeded じゃないとうまく機能しない。
+  has_many の場合は includes をする必要がある
+  しかし includes がうまく機能しないのか、以下のクエリーがうまく働かない
+    Store.includes(:tags).where("tags.name"=>params[:q])
+  色々試してみたが、うまく行かないので、REFERENCED ではなく EMBEDDED を使うことにする 
+  ★根本的な解決になっていない
+  　 embedded の特徴(子からの検索はできない)を考えるに referenced を利用しなければならないケースが出てくる
+    その時にこの問題を解決していないとキツい
+
+日本語化の対応
+  Railsそのものに国際化対応のプラグインを導入
+    i18n_generators
+  Mongoid用のロケールを作成
+    http://bitprison.net/monoig_model_attibutes_translation
+
+embed_many, embeded_in を使っていると子単体の検索ができない。
+  以下のようなエラーが発生する
+    親: store 子: comment
+    Comment.where('store.name'=>"user1").first
+    Mongoid::Errors::InvalidCollection: 
+    次のコレクションにアクセスしようしました。 Comment しかし、このコレクションアクセスするためにはルートドキュメントから アクセスする必要があります
+  子単体で検索したい場合は、embeded ではなく referenced を活用する
+  
+  

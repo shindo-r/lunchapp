@@ -1,0 +1,42 @@
+%h1
+  = t('view.name.store_index')
+
+
+= link_to t('view.event.base.new'), new_store_path
+%br
+%br
+
+= form_tag("/stores", :method => "get") do
+  = text_field_tag(:q, params[:q])
+  = radio_button_tag(:search_by, "keyword", params[:search_by]!="tag")
+  = label_tag(:search_by_keyword, t('view.attr.store_index.key_word'))
+  = radio_button_tag(:search_by, "tag", params[:search_by]=="tag")
+  = label_tag(:search_by_tag, t('view.attr.store_index.tag'))
+  = submit_tag(t('view.event.base.search'))
+  = button_to_function t('view.event.base.clear'),'location="'+stores_url(:search_by=>"",:q=>"")+'"'
+  
+%br
+- case @stores.size
+- when 0
+  = t('view.message.store_index.no_stores')
+- else
+  %table
+    %tr
+      %th= Store.human_attribute_name(:name)
+      %th= Tag.model_name.human
+      %th= t('view.attr.store_index.recent_comment')
+      %th
+      %th
+
+    - @stores.order_by([:updated_at,:desc]).each do |store|
+      %tr
+        %td= link_to store.name, store
+        %td
+          -store.tags.each do |tag|
+            = link_to tag.name, stores_url(:search_by=>"tag",:q=>tag.name)
+        %td 
+          = store.comments.order_by([:created_at,:desc]).first.try(:comment)
+        %td= link_to t('view.event.base.edit'), edit_store_path(store)
+        %td= link_to t('view.event.base.destroy'), store, :method=> :delete
+
+%br

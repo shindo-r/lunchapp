@@ -1,0 +1,38 @@
+- @store.tags.build  while @store.tags.size < 5
+- @store.comments.build
+= form_for(@store) do |f|
+  - if @store.errors.any?
+    .error_explanation
+      %b
+        = pluralize(@store.errors.count, "error")
+        prohibited this store from being saved:
+
+      %ul
+        - @store.errors.full_messages.each do |msg|
+          %li= msg
+
+  .field
+    %b= f.label :name
+    %br
+    = f.text_field :name
+    
+  - i = 0
+  .field
+    %b= f.label :tags
+    %br
+    = f.fields_for :tags do |tag_f|
+      = tag_f.label :name 
+      %br
+      = tag_f.text_field :name
+      %br
+
+  .field
+    %b= f.label :comments
+    = f.fields_for :comments do |comment_f|
+      - if comment_f.object.new_record?
+        = comment_f.text_field :comment 
+      - else
+        %li= comment_f.object.comment
+	
+  .actions
+    = f.submit

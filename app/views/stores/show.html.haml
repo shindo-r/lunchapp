@@ -1,0 +1,36 @@
+%h1
+  = t('view.name.store_show')
+
+%p#notice
+  = notice
+
+%p
+  %b= Store.human_attribute_name(:name)
+  %br
+  = @store.name
+  
+%p
+  %b= Store.human_attribute_name(:tags)
+  %br
+  - @store.tags.each_with_index do |tag,i|
+    %b= Tag.model_name.human
+    = link_to tag.name, stores_url(:search_by=>"tag",:q=>tag.name)
+    %br
+
+%p
+  %b= Store.human_attribute_name(:comments)
+  - @store.comments.build
+  = form_for(@store) do |f|
+    = f.fields_for :comments do |comment_f|
+      - if comment_f.object.new_record?
+        = comment_f.text_field :comment 
+      - else
+        %li= comment_f.object.comment
+    .actions
+      = f.submit t('view.event.base.post')
+    
+
+
+= link_to t('view.event.base.edit'), edit_store_path(@store)
+|
+= link_to t('view.event.base.back'), stores_path

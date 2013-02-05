@@ -1,0 +1,23 @@
+ja:
+  mongoid:
+    errors:
+      models:
+        store:
+          attributes:
+            base:
+              tags_can_not_have_duplicateed_tags: "重複したタグは登録できません"
+    models:
+      store: "店"
+      tag: "タグ"
+      comment: "コメント"
+    attributes:
+      store:
+        name: "店名"
+        tags: "登録タグ一覧"
+        comments: "コメント一覧"
+      tag:
+        tag:  "タグ"
+        name: "タグ名"
+      comment:
+        comment: "コメント"
+        
